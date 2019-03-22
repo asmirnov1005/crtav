@@ -50,35 +50,35 @@ return rec(
     return result;
   end,
 
-	getCMTypeRepresentatives := function (allCMTypes, transformationsGroup)
-		local constructSMTypeOrbit,
+  getCMTypeRepresentatives := function (allCMTypes, transformationsGroup)
+    local constructSMTypeOrbit,
           i,
           result;
 
-		constructSMTypeOrbit := function (CMType)
-			return Set(List(
-				Elements(transformationsGroup),
-				automorphism -> Set(List(
-					CMType,
-					element -> Set(Image(automorphism, element))
-				))
-			));
-		end;
+    constructSMTypeOrbit := function (CMType)
+      return Set(List(
+        Elements(transformationsGroup),
+        automorphism -> Set(List(
+          CMType,
+          element -> Set(Image(automorphism, element))
+        ))
+      ));
+    end;
 
-		result := Set([ rec(
-			CMType := allCMTypes[1],
-			CMTypeOrbit := constructSMTypeOrbit(allCMTypes[1])
-		) ]);
+    result := Set([ rec(
+      CMType := allCMTypes[1],
+      CMTypeOrbit := constructSMTypeOrbit(allCMTypes[1])
+    ) ]);
 
-		for i in [2..Length(allCMTypes)] do
-			if First(result, CMTypeData -> allCMTypes[i] in CMTypeData.CMTypeOrbit) = fail then
-				AddSet(result, rec(
-					CMType := allCMTypes[i],
-					CMTypeOrbit := constructSMTypeOrbit(allCMTypes[i])
-				));
-			fi;
-		od;
+    for i in [2..Length(allCMTypes)] do
+      if First(result, CMTypeData -> allCMTypes[i] in CMTypeData.CMTypeOrbit) = fail then
+        AddSet(result, rec(
+          CMType := allCMTypes[i],
+          CMTypeOrbit := constructSMTypeOrbit(allCMTypes[i])
+        ));
+      fi;
+    od;
 
-		return Set(List(result, CMTypeData -> CMTypeData.CMType));
-	end
+    return Set(List(result, CMTypeData -> CMTypeData.CMType));
+  end
 );

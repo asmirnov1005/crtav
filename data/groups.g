@@ -1,26 +1,26 @@
 return [
 # Dimension 1
-	[
-		SmallGroup(2, 1)
-	],
+  [
+    SmallGroup(2, 1)
+  ],
 # Dimension 2
-	[
-		SmallGroup(4, 1),
+  [
+    SmallGroup(4, 1),
 
     SmallGroup(8, 3)
-	],
+  ],
 # Dimension 3
-	[
-		SmallGroup(6, 2),
+  [
+    SmallGroup(6, 2),
 
     SmallGroup(12, 4),
 
     SmallGroup(24, 13),
 
     SmallGroup(48, 48)
-	],
+  ],
 # Dimension 4
-	[
+  [
     SmallGroup(8, 1),
     SmallGroup(8, 2),
     SmallGroup(8, 3),
@@ -62,7 +62,7 @@ return [
     SmallGroup(384, 5602)
   ],
 # Dimension 5
-	[
+  [
     SmallGroup(10, 2),
 
     SmallGroup(20, 4),

@@ -3,7 +3,7 @@
 The project is built upon the algorithm described in *Smirnov A., Zaytsev A., "Computing Algorithm for Reduction Type of CM Abelian Varieties"*.
 
 To use the program:
-1. In the *main.g* file, specify the full path from the GAP root folder to the project’s root folder as `ROOT_DIR`. Assume the whole project is contained within the *crtav* folder located inside the *projects* subfolder of the GAP root folder, therefore `ROOT_DIR = "projects/crtav/"`.
+1. In the *main.g* file, specify the full path from the GAP root folder to the project's root folder as `ROOT_DIR`. Assume the whole project is contained within the *crtav* folder located inside the *projects* subfolder of the GAP root folder, therefore `ROOT_DIR = "projects/crtav/"`.
 2. Launch GAP and run the command: `Read("projects/crtav/main.g")`.
 
 By default, the program displays the algorithm execution results and launches the tests, while the output is sent to the file *output/result.txt*. This can be modified by changing the settings in *settings.g*.
