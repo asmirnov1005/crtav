@@ -1,194 +1,78 @@
-INPUT_MODE := "UpTo5";;
+ROOT_DIR := "projects/crtav/";
 
-Read(Concatenation("/crtav/Data/Input", INPUT_MODE, ".g"));;
+# Independent imports
+settings := ReadAsFunction(Concatenation(ROOT_DIR, "settings.g"))();
+groupData := ReadAsFunction(Concatenation(ROOT_DIR, "data/groups.g"))();
+testData := ReadAsFunction(Concatenation(ROOT_DIR, "data/tests.g"))();
+Chain := ReadAsFunction(Concatenation(ROOT_DIR, "classes/chain.g"))();
+Edge := ReadAsFunction(Concatenation(ROOT_DIR, "classes/edge.g"))();
+Stack := ReadAsFunction(Concatenation(ROOT_DIR, "classes/stack.g"))();
+printService := ReadAsFunction(Concatenation(ROOT_DIR, "services/print.g"))();
+transformationsService := ReadAsFunction(Concatenation(ROOT_DIR, "services/transformations.g"))();
+checkForEachPair := ReadAsFunction(Concatenation(ROOT_DIR, "functions/check_for_each_pair.g"))();
+constructFactorset := ReadAsFunction(Concatenation(ROOT_DIR, "functions/construct_factorset.g"))();
+indexOf := ReadAsFunction(Concatenation(ROOT_DIR, "functions/index_of.g"))();
+skipDimension := ReadAsFunction(Concatenation(ROOT_DIR, "functions/skip_dimension.g"))();
+stringifyCalculationDuration := ReadAsFunction(Concatenation(ROOT_DIR, "functions/stringify_calculation_duration.g"))();
+stringifyResults := ReadAsFunction(Concatenation(ROOT_DIR, "functions/stringify_results.g"))();
+stringifyTests := ReadAsFunction(Concatenation(ROOT_DIR, "functions/stringify_tests.g"))();
 
-Read("/crtav/Lib/Print.g");;
-Read("/crtav/Lib/Classes.g");;
-Read("/crtav/Lib/Helpers.g");;
-Read("/crtav/Lib/GroupRepresentation.g");;
-Read("/crtav/Lib/AdmissibleTransformations.g");;
-Read("/crtav/Lib/SelectComplexConjugations.g");;
-Read("/crtav/Lib/SelectDeltaSubgroups.g");;
-Read("/crtav/Lib/SelectG0Subgroup.g");;
-Read("/crtav/Lib/SelectCMTypes.g");;
-Read("/crtav/Lib/SigmaData.g");;
-Read("/crtav/Lib/PrepareGeneralData.g");;
+# Imports which depend from the independent
+CircularWord := ReadAsFunction(Concatenation(ROOT_DIR, "classes/circular_word.g"))();
+getCMTypes := ReadAsFunction(Concatenation(ROOT_DIR, "functions/get_cm_types.g"))();
+getComplexConjugations := ReadAsFunction(Concatenation(ROOT_DIR, "functions/get_complex_conjugations.g"))();
+getDeltaSubgroups := ReadAsFunction(Concatenation(ROOT_DIR, "functions/get_delta_subgroups.g"))();
 
-ALPHABET := SplitString(Flat(List([1..100], n -> List("ABCDEFGHIJKLMNOPQRSTUVWXYZ", s -> Concatenation(['('], [s], String(n), [')'], [' '])))), ' ');;
-PRINT_ALL := false;
+# Most dependent imports
+getSigmaData := ReadAsFunction(Concatenation(ROOT_DIR, "functions/get_sigma_data.g"))();
 
-mainData := rec();;
-resultData := [];;
+sigmaData := [];
+startTime := Runtime();
+for dimA in [1..Length(groupData)] do
 
-for i1 in [1..Length(GaloisGroupsData)] do
-	
-	if i1 > 1 then
-		PrintBigSeparator();
-	fi;
-	mainData.dimA := i1;
-	CPrint([i1], "Размерность равна ", mainData.dimA);
-	
-	resultData[mainData.dimA] := [];
-	
-	mainData.allGaloisGroups := GaloisGroupsData[i1];
-	if Length(mainData.allGaloisGroups) > 0 then
-		mainData.permutationGroupsRepresentatives := ConstructPermuatationGroupsRepresentatives(mainData);
-	fi;
-	
-	for i2 in [1..Length(mainData.allGaloisGroups)] do
-		
-		if i2 > 1 then
-			PrintSeparator();
-		fi;
-		mainData.GaloisGroupId := i2;
-		
-		mainData.G := mainData.allGaloisGroups[i2];
-		mainData.G := ConvertToPermutationGroup(mainData);
-		mainData.orderG := Order(mainData.G);
-		mainData.isGalois := mainData.dimA = mainData.orderG / 2;
-		if mainData.isGalois then
-			CPrint([i1, i2], "K / Q является расширением Галуа, L = K");
-		else
-			CPrint([i1, i2], "K / Q не является расширением Галуа, L = GalCl(K)");
-		fi;
-		if mainData.orderG < 2000 then
-			SPrint(2, "Рассматривается группа Галуа G = Gal(L / K) = ", mainData.G, " = ", StructureDescription(mainData.G), " = SmallGroup(", IdGroup(mainData.G), ")");
-		else
-			SPrint(2, "Рассматривается группа Галуа G = Gal(L / K) = ", mainData.G, " = ", StructureDescription(mainData.G), " порядка ", mainData.orderG);
-		fi;
-		
-		SPrint(2, "Вычисляются классы сопряжённости подгрупп группы G");
-		mainData.subgroupsRepresentatives := List(ConjugacyClassesSubgroups(mainData.G), Representative);
-		
-		mainData.allAutG := Stack();
-		SPrint(2, "Строятся автоморфизмы группы G");
-		mainData.allAutG.push(AutomorphismGroup(mainData.G));
-		SPrint(2, "Производится поиск кандидатов на роль комплексного сопряжения iota");
-		mainData.allComplexConjugations := SelectComplexConjugations(mainData);
-		DataLengthIndicator(2, mainData.allComplexConjugations, "iota");
-		
-		for i3 in [1..Length(mainData.allComplexConjugations)] do
-			
-			mainData.iotaId := i3;
-			
-			mainData.iota := mainData.allComplexConjugations[i3];
-			CPrint([i1, i2, i3], "Комплексное сопряжение iota = ", mainData.iota);
-			
-			mainData.allAutG.push(FilterTransformationsFixingElement(mainData.iota, mainData.allAutG.top()));
-			
-			SPrint(3, "Производится поиск кандидатов на роль подгруппы Delta");
-			mainData.allDeltaSubgroups := SelectDeltaSubgroups(mainData);
-			DataLengthIndicator(3, mainData.allDeltaSubgroups, "Delta");
-			
-			for i4 in [1..Length(mainData.allDeltaSubgroups)] do
-				
-				mainData.DeltaId := i4;
-				
-				mainData.Delta := mainData.allDeltaSubgroups[i4];
-				CPrint([i1, i2, i3, i4], "Delta = ", mainData.Delta, " = ", StructureDescription(mainData.Delta));
-				SPrint(4, "|Delta| = ", Order(mainData.Delta));
-				
-				mainData.allAutG.push(FilterTransformationsFixingSubgroup(mainData.Delta, mainData.allAutG.top()));
-				
-				mainData.factorGByDeltaLeft := FactorsetOfGroupBySubgroup(mainData.G, mainData.Delta);
-				SPrint(4, "Фактормножество Delta \\ G:");
-				SPrint(4, List(
-					mainData.factorGByDeltaLeft,
-					class -> [class[1]]
-				));
-				
-				SPrint(4, "Производится построение подгруппы G0");
-				mainData.G0 := SelectG0Subgroup(mainData);
-				
-				SPrint(4, "Производится поиск всевозможных CM-типов");
-				mainData.allCMTypes := SelectCMTypes(mainData, PRINT_ALL, 4);
-				if Length(mainData.allCMTypes) > 1 then
-					SPrint(4, "Количество различных CM-типов: ", Length(mainData.allCMTypes));
-				fi;
-				
-				for i5 in [1..Length(mainData.allCMTypes)] do
-					
-					mainData.CMTypeId := i5;
-					
-					mainData.CMType := mainData.allCMTypes[i5];
-					CPrint([i1, i2, i3, i4, i5], "Производится обработка данных для CM-типа ", ALPHABET[i5]);
-					SPrint(5, List(
-						mainData.CMType,
-						class -> [class[1]]
-					));
-					
-					mainData.sigmaData := GetSigmaData(mainData, PRINT_ALL, 5);
-					
-					if PRINT_ALL then
-						for i6 in [1..Length(mainData.sigmaData)] do
-							data := mainData.sigmaData[i6];
-							SPrint(6, "sigmaData: ", data);
-							SkipStrings(2);
-						od;
-					else
-						SPrint(5, "Обработка данных по CM-типу ", ALPHABET[i5], " завершена");
-					fi;
-					
-					Append(resultData[mainData.dimA], mainData.sigmaData);
-					
-				od;
-				
-				mainData.allAutG.pop();
-				
+	sigmaData[dimA] := rec();
+  if (skipDimension(dimA, settings.dimensionFilter)) then
+    continue;
+  fi;
+	for G in groupData[dimA] do
+
+		G := Image(IsomorphismPermGroup(G));
+		representativesOfSubgroupsOfG := List(ConjugacyClassesSubgroups(G), Representative);
+		admissibleAutomorphismsOfG := Stack();
+		admissibleAutomorphismsOfG.push(AutomorphismGroup(G));
+		complexConjugations := getComplexConjugations(G, admissibleAutomorphismsOfG.top());
+		for iota in complexConjugations do
+
+			admissibleAutomorphismsOfG.push(transformationsService.filterByElement(iota, admissibleAutomorphismsOfG.top()));
+			deltaSubgroups := getDeltaSubgroups(dimA, G, iota, representativesOfSubgroupsOfG, admissibleAutomorphismsOfG.top());
+			for delta in deltaSubgroups do
+
+				admissibleAutomorphismsOfG.push(transformationsService.filterBySubgroup(delta, admissibleAutomorphismsOfG.top()));
+				factorGByDeltaLeft := constructFactorset(G, delta);
+        factorGByG0Left := constructFactorset(G, Group(Concatenation(GeneratorsOfGroup(delta), [ iota ])));
+				CMTypes := getCMTypes(Order(G), iota, delta, factorGByDeltaLeft, representativesOfSubgroupsOfG, admissibleAutomorphismsOfG.top());
+        for CMType in CMTypes do
+
+          sigmaData[dimA] := getSigmaData(sigmaData[dimA], CMType, G, factorGByDeltaLeft, factorGByG0Left, admissibleAutomorphismsOfG.top());
+
+        od;
+				admissibleAutomorphismsOfG.pop();
+
 			od;
-			
-			mainData.allAutG.pop();
-			
+			admissibleAutomorphismsOfG.pop();
+
 		od;
-		
-		mainData.allAutG.pop();
-		
+		admissibleAutomorphismsOfG.pop();
+
 	od;
-	
+
 od;;
 
-PrintGiantSeparator();
-
-resultData := PrepareGeneralData(resultData);;
-
-for dimA in [1..Length(resultData)] do
-	
-	if dimA > 1 then
-		PrintSeparator();
-	fi;
-	
-	SPrint(1, "Таблица результатов для размерности ", dimA);
-	data := resultData[dimA];
-	
-	for keys in data.keys() do
-		
-		SPrint(2, "Набору ключей");
-		SPrint(2, List(NamesOfComponents(keys), keyName -> Concatenation(keyName, " = ", String(keys.(keyName)))));
-		SPrint(2, "соответствуют следующие данные:");
-		
-		result := data.get(keys);
-		
-		for i in [1..Length(result)] do
-			
-			SPrint(3, i, ") Набор слов: ", result[i].words);
-			SPrint(5, "p-ранг = ", result[i].pRank, ", a-число = ", result[i].aNumber);
-			
-			if PRINT_ALL then
-				
-				SPrint(5, "Элементы, приводящие к разложению:");
-				
-				for j in [1..Length(result[i].sigmas)] do
-				
-					SPrint(6, result[i].sigmas[j][1], " -> ", result[i].sigmas[j][2]);
-				
-				od;
-				
-			fi;
-			
-		od;
-		
-		SkipStrings(2);
-		
-	od;
-	
-od;;
+printService.clear();
+if (settings.checkCalculationDuration) then
+  printService.print(Concatenation(stringifyCalculationDuration(startTime, Runtime()), "\n\n"));
+fi;
+printService.print(stringifyResults(sigmaData));
+if (settings.runTests) then
+  printService.print(Concatenation("\n\n", stringifyTests(sigmaData, testData)));
+fi;
