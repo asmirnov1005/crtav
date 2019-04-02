@@ -1,12 +1,11 @@
-return function (dimA, G, iota, representativesOfSubgroupsOfG, admissibleAutomorphismsOfG)
+return function (dimA, G, iota, subgroupsOfG, admissibleAutomorphismsOfG)
   local result;
 
   if Order(G) = 2 * dimA then
-    return Filtered(representativesOfSubgroupsOfG, H -> Order(H) = 1);
+    return Filtered(subgroupsOfG, H -> Order(H) = 1);
   fi;
-
   result := Filtered(
-    representativesOfSubgroupsOfG,
+    subgroupsOfG,
     H ->
       Order(H) = Order(G) / (2 * dimA) and
       not iota in H and

@@ -1,5 +1,5 @@
-return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSubgroupsOfG, admissibleAutomorphismsOfG)
-  local conjugateOfElement, isNotConjugatedPair, selectNonConjugatedCMTypes, selectPrimitiveCMTypes, selectNonEquivalentCMTypes,
+return function (G, iota, delta, factorGByDeltaLeft, subgroupsOfG, admissibleAutomorphismsOfG)
+  local conjugateOfElement, isNotConjugatedPair, generateCMTypes, selectNonConjugatedCMTypes, selectPrimitiveCMTypes,
         result;
 
   conjugateOfElement := function (class)
@@ -8,6 +8,42 @@ return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSub
 
   isNotConjugatedPair := function (class1, class2)
     return not conjugateOfElement(class1) = class2;
+  end;
+
+  generateCMTypes := function ()
+    local initConjugatedPairs,
+          conjugatedPairs,
+          result;
+
+    initConjugatedPairs := function ()
+      local class, classIndex,
+            result;
+
+      result := [];
+      for class in factorGByDeltaLeft do
+        classIndex := indexOf(result, class, function (resultClasses, currentClass)
+          return conjugateOfElement(resultClasses[1]) = currentClass;
+        end);
+        if classIndex = -1 then
+          Add(result, [class]);
+        else
+          Add(result[classIndex], class);
+        fi;
+      od;
+
+      return result;
+    end;
+
+    # First way for the calculating of CM types.
+    if true then
+      result := Set(List(Combinations(factorGByDeltaLeft, Length(factorGByDeltaLeft) / 2), l -> Set(l)));
+      result := Filtered(result, CMType -> checkForEachPair(CMType, isNotConjugatedPair));
+    else
+      conjugatedPairs := initConjugatedPairs();
+      result := Set(List(Tuples([1, 2], Length(conjugatedPairs)), tuple -> Set(List([1..Length(tuple)], i -> conjugatedPairs[i][tuple[i]]))));
+    fi;
+
+    return result;
   end;
 
   selectNonConjugatedCMTypes := function (allCMTypes)
@@ -25,15 +61,26 @@ return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSub
   end;
 
   selectPrimitiveCMTypes := function (allCMTypes)
-    local isPrimitive,
-          i,
+    local getCMSubgroups, isPrimitive,
+          allCMSubgroups, i,
           result;
 
-    result := Set([]);
+    getCMSubgroups := function ()
+      local invariantFilter, getSuitableRepresentative;
+
+      invariantFilter := function (H)
+        return Order(H) > Order(delta) and not iota in H;
+      end;
+
+      getSuitableRepresentative := function (H)
+        return First(ConjugateSubgroups(G, H), K -> IsSubgroup(K, delta));
+      end;
+
+      return Filtered(List(Filtered(subgroupsOfG, invariantFilter), getSuitableRepresentative), IsGroup);
+    end;
 
     isPrimitive := function (CMType)
       local CMTypeRestriction, isCMType,
-            allCMSubgroups,
             i;
 
       CMTypeRestriction := function (CMType, CMSubgroup)
@@ -46,7 +93,7 @@ return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSub
       isCMType := function (preCMType, CMSubgroup)
         local i, j;
 
-        if not Length(preCMType) = orderOfG / (2 * Order(CMSubgroup)) then
+        if not Length(preCMType) = Order(G) / (2 * Order(CMSubgroup)) then
           return false;
         fi;
 
@@ -61,16 +108,6 @@ return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSub
         return true;
       end;
 
-      allCMSubgroups := Filtered(
-        representativesOfSubgroupsOfG,
-        function (H)
-          return
-            Order(H) > Order(delta) and
-            IsSubgroup(H, delta) and
-            not iota in H;
-        end
-      );
-
       for i in [1..Length(allCMSubgroups)] do
         if isCMType(CMTypeRestriction(CMType, allCMSubgroups[i]), allCMSubgroups[i]) then
           return true;
@@ -79,6 +116,9 @@ return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSub
 
       return false;
     end;
+
+    allCMSubgroups := getCMSubgroups();
+    result := Set([]);
 
     for i in [1..Length(allCMTypes)] do
       if not isPrimitive(allCMTypes[i]) then
@@ -89,8 +129,7 @@ return function (orderOfG, iota, delta, factorGByDeltaLeft, representativesOfSub
     return result;
   end;
 
-  result := Set(List(Combinations(factorGByDeltaLeft, Length(factorGByDeltaLeft) / 2), l -> Set(l)));
-  result := Filtered(result, CMType -> checkForEachPair(CMType, isNotConjugatedPair));;
+  result := generateCMTypes();
   result := selectNonConjugatedCMTypes(result);
   result := selectPrimitiveCMTypes(result);
   if Length(result) = 0 then

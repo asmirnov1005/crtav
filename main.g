@@ -37,20 +37,20 @@ for dimA in [1..Length(groupData)] do
   for G in groupData[dimA] do
 
     G := Image(IsomorphismPermGroup(G));
-    representativesOfSubgroupsOfG := List(ConjugacyClassesSubgroups(G), Representative);
+    subgroupsOfG := List(ConjugacyClassesSubgroups(G), Representative);
     admissibleAutomorphismsOfG := Stack();
     admissibleAutomorphismsOfG.push(AutomorphismGroup(G));
     complexConjugations := getComplexConjugations(G, admissibleAutomorphismsOfG.top());
     for iota in complexConjugations do
 
       admissibleAutomorphismsOfG.push(transformationsService.filterByElement(iota, admissibleAutomorphismsOfG.top()));
-      deltaSubgroups := getDeltaSubgroups(dimA, G, iota, representativesOfSubgroupsOfG, admissibleAutomorphismsOfG.top());
+      deltaSubgroups := getDeltaSubgroups(dimA, G, iota, subgroupsOfG, admissibleAutomorphismsOfG.top());
       for delta in deltaSubgroups do
 
         admissibleAutomorphismsOfG.push(transformationsService.filterBySubgroup(delta, admissibleAutomorphismsOfG.top()));
         factorGByDeltaLeft := constructFactorset(G, delta);
         factorGByG0Left := constructFactorset(G, Group(Concatenation(GeneratorsOfGroup(delta), [ iota ])));
-        CMTypes := getCMTypes(Order(G), iota, delta, factorGByDeltaLeft, representativesOfSubgroupsOfG, admissibleAutomorphismsOfG.top());
+        CMTypes := getCMTypes(G, iota, delta, factorGByDeltaLeft, subgroupsOfG, admissibleAutomorphismsOfG.top());
         for CMType in CMTypes do
 
           sigmaData[dimA] := getSigmaData(sigmaData[dimA], CMType, G, factorGByDeltaLeft, factorGByG0Left, admissibleAutomorphismsOfG.top());
